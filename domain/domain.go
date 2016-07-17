@@ -4,25 +4,37 @@ import (
 	"github.com/pborman/uuid"
 )
 
+type PropertyId string
+type DeviceId string
+
+type IP string
+type UserAgent string
+type AcceptLanguage string
+
+type LongURL string
+type ShortURL string
+
+type DeviceInfo struct {
+	IP        IP
+	UserAgent UserAgent
+	Language  AcceptLanguage
+}
+
 type PixelTrackingInteractor interface {
-	Track(PropertyId, DeviceToken, UserAgent, AcceptLanguage) (DeviceToken, error)
+	Track(PropertyId, DeviceId, *DeviceInfo) error
 }
 
 type DeviceTokenEncrypter interface {
-	Decrypt(deviceToken DeviceToken) (DeviceId, error)
-	Encrypt(deviceId DeviceId) (DeviceToken, error)
+	Decrypt(deviceToken string) (DeviceId, error)
+	Encrypt(deviceId DeviceId) (string, error)
 	Validate() error
 }
 
-type PropertyId string
-
-type DeviceToken string
-
-type DeviceId string
+type RedirectInteractor interface {
+	Redirect(ShortURL, DeviceId, *DeviceInfo) (LongURL, error)
+	Register(url LongURL) (ShortURL, error)
+}
 
 func NewDeviceId() DeviceId {
 	return DeviceId(uuid.New())
 }
-
-type UserAgent string
-type AcceptLanguage string
