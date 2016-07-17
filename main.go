@@ -2,8 +2,11 @@ package main
 
 import (
 	"github.com/gorilla/mux"
-	. "github.com/sjhitchner/trackly/infrastructure/rest"
-	"github.com/sjhitchner/trackly/interfaces/rest"
+	"github.com/sjhitchner/trackly/infrastructure/rest"
+	restCommon "github.com/sjhitchner/trackly/interfaces/rest/common"
+	restTracking "github.com/sjhitchner/trackly/interfaces/rest/pixel"
+	restRedirect "github.com/sjhitchner/trackly/interfaces/rest/redirect"
+	"github.com/sjhitchner/trackly/usecases/redirect"
 	"github.com/sjhitchner/trackly/usecases/tracking"
 	"log"
 	"net/http"
@@ -25,7 +28,7 @@ func init() {
 }
 
 func main() {
-	deviceTokenEncrypter := tracking.NewDeviceTokenEncrypter(
+	deviceTokenEncrypter := restCommon.NewDeviceTokenEncrypter(
 		"5764328pn341194qp4nq89pp99pn0qsp",
 		"592baef1a02bfaf13d63b280c38775b9",
 	)
@@ -34,21 +37,25 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	//router.HandleFunc("/", http.NotFound)
+	router.HandleFunc("/", http.NotFound)
 	router.Handle("/", http.RedirectHandler(redirectUrl, http.StatusOK))
 
-	trackingInteractor := tracking.NewPixelTrackingInteractor(deviceTokenEncrypter)
+	trackingInteractor := tracking.NewPixelTrackingInteractor()
+	redirectInteractor := redirect.NewRedirectInteractor()
 
-	trackingResource := rest.NewPixelTrackingResource(trackingInteractor)
+	trackingResource := restTracking.NewTrackingResource(deviceTokenEncrypter, trackingInteractor)
 	trackingResource.Register(router)
+
+	redirectResource := restRedirect.NewRedirectResource(deviceTokenEncrypter, redirectInteractor)
+	redirectResource.Register(router)
 
 	router.Path("/ping").
 		Methods("GET").
-		HandlerFunc(SeppukuHealthCheck(VERSION, seppukuDelaySeconds))
+		HandlerFunc(rest.SeppukuHealthCheck(VERSION, seppukuDelaySeconds))
 
 	router.Path("/version").
 		Methods("GET").
-		HandlerFunc(VersionHandler(VERSION))
+		HandlerFunc(rest.VersionHandler(VERSION))
 
 	http.Handle("/", router)
 
