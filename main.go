@@ -18,9 +18,6 @@ var (
 
 	redirectUrl         string
 	seppukuDelaySeconds time.Duration
-	pixelCookieName     string
-	pixelCookieDuration time.Duration
-	pixelCookieSecret   string
 )
 
 func init() {
@@ -37,17 +34,18 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", http.NotFound)
 	router.Handle("/", http.RedirectHandler(redirectUrl, http.StatusOK))
 
 	trackingInteractor := tracking.NewPixelTrackingInteractor()
 	redirectInteractor := redirect.NewRedirectInteractor()
 
-	trackingResource := restTracking.NewTrackingResource(deviceTokenEncrypter, trackingInteractor)
-	trackingResource.Register(router)
-
-	redirectResource := restRedirect.NewRedirectResource(deviceTokenEncrypter, redirectInteractor)
-	redirectResource.Register(router)
+	resources := []restCommon.RESTResource{
+		restTracking.NewTrackingResource(deviceTokenEncrypter, trackingInteractor),
+		restRedirect.NewRedirectResource(deviceTokenEncrypter, redirectInteractor),
+	}
+	for _, resource := range resources {
+		resource.Register(router)
+	}
 
 	router.Path("/ping").
 		Methods("GET").

@@ -17,7 +17,7 @@ const (
 	CookieDuration = 365 * 24 * time.Hour
 )
 
-type Resource interface {
+type RESTResource interface {
 	Register(*mux.Router)
 }
 
@@ -49,7 +49,7 @@ func (t BaseResourceImpl) GetDeviceData(request *http.Request) (*http.Cookie, De
 	}
 
 	deviceInfo := &DeviceInfo{
-		IP:        "test",
+		IP:        IP(request.RemoteAddr),
 		UserAgent: UserAgent(request.Header.Get(HeaderUserAgent)),
 		Language:  AcceptLanguage(request.Header.Get(HeaderAcceptLanguage)),
 	}
